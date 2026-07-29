@@ -1,0 +1,10 @@
+customer_id,name,email,country,signup_date
+C001,Alice Sharma,alice.sharma@example.com,IN,2024-01-10
+C002,Bob Chen,bob.chen@example.com,US,2024-01-12
+C003,Cara Lopez,cara.lopez@example.com,MX,2024-01-15
+C005,Eve Okonkwo,eve.okonkwo@example.com,NG,2024-02-03
+C006,Frank Mueller,frank.mueller@example.com,DE,2024-02-05
+C008,Hiro Tanaka,hiro.tanaka@example.com,JP,2024-02-12
+C010,James Brown,james.brown@example.com,US,2024-02-20
+C011,Kelly Wong,kelly.wong@example.com,UNKNOWN,2024-03-01
+C012,Liam OBrien,liam.obrien@example.com,IE,2024-03-05

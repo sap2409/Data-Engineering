@@ -1,0 +1,14 @@
+customer_id,name,email,country,signup_date,raw_source
+C001,Alice Sharma,alice.sharma@example.com,IN,2024-01-10,crm
+C002,Bob Chen,bob.chen@example.com,US,2024-01-12,crm
+C003,Cara Lopez,cara.lopez@example.com,MX,2024-01-15,web
+C004,Dan Patel,,IN,2024-02-01,crm
+C005,Eve Okonkwo,eve.okonkwo@example.com,NG,2024-02-03,web
+C006,Frank Mueller,frank.mueller@example.com,DE,2024-02-05,crm
+C002,Bob Chen,bob.chen@example.com,US,2024-01-12,crm
+C007,Grace Kim,not-an-email,KR,2024-02-10,web
+C008,Hiro Tanaka,hiro.tanaka@example.com,JP,2024-02-12,crm
+C009,,iris.novak@example.com,CZ,2024-02-14,web
+C010,James Brown,james.brown@example.com,US,2024-02-20,crm
+C011,Kelly Wong,kelly.wong@example.com,,2024-03-01,web
+C012,Liam OBrien,liam.obrien@example.com,IE,2024-03-05,crm

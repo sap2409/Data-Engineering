@@ -1,0 +1,7 @@
+order_id,customer_id,order_date,amount,currency,status,ingested_at,rejection_reason,rejected_at
+O1002,C002,2024-03-02,45.0,USD,shipped,2024-03-03 01:00:00,duplicate_order_id,2026-07-29T07:49:36.172129+00:00
+O1003,C003,2024-03-03,-10.0,MXN,paid,2024-03-04 01:00:00,non_positive_or_null_amount,2026-07-29T07:49:36.221266+00:00
+O1007,C010,2024-03-07,,USD,paid,2024-03-08 01:00:00,non_positive_or_null_amount,2026-07-29T07:49:36.221266+00:00
+O1010,C001,2024-03-10,55.0,INR,UNKNOWN,2024-03-11 01:00:00,invalid_status,2026-07-29T07:49:36.271374+00:00
+O1012,,2024-03-12,99.0,USD,paid,2024-03-13 01:00:00,blank_customer_id,2026-07-29T07:49:36.329693+00:00
+O1009,C999,2024-03-09,30.0,USD,paid,2024-03-10 01:00:00,orphan_customer_id,2026-07-29T07:49:36.420997+00:00

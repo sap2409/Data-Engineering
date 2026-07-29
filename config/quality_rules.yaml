@@ -1,0 +1,40 @@
+tables:
+  customers:
+    primary_key: customer_id
+    bronze_path: data/bronze/customers.csv
+    silver_path: data/silver/customers.csv
+    quarantine_path: data/quarantine/customers.csv
+    expected_columns:
+      bronze: [customer_id, name, email, country, signup_date, raw_source]
+      silver: [customer_id, name, email, country, signup_date]
+    rules:
+      max_row_drop_pct: 50
+      max_null_pct:
+        email: 0
+        name: 0
+        country: 0
+      unique_columns: [customer_id, email]
+      email_format: true
+
+  orders:
+    primary_key: order_id
+    bronze_path: data/bronze/orders.csv
+    silver_path: data/silver/orders.csv
+    quarantine_path: data/quarantine/orders.csv
+    expected_columns:
+      bronze: [order_id, customer_id, order_date, amount, currency, status, ingested_at]
+      silver: [order_id, customer_id, order_date, amount, currency, status]
+    rules:
+      max_row_drop_pct: 50
+      max_null_pct:
+        order_id: 0
+        customer_id: 0
+        amount: 0
+        status: 0
+      unique_columns: [order_id]
+      amount_positive: true
+      allowed_status: [pending, paid, shipped, cancelled, refunded]
+
+thresholds:
+  warn_row_drop_pct: 5
+  fail_row_drop_pct: 15

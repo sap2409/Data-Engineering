@@ -1,0 +1,64 @@
+# Bronze → Silver DQ Job (env-parameterized)
+
+resources:
+  jobs:
+    bronze_silver_dq_agent:
+      name: "[${bundle.target}] Bronze-Silver-DQ-Agent"
+      max_concurrent_runs: 1
+      tags:
+        project: bronze-silver-dq
+        env: ${bundle.target}
+
+      tasks:
+        - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: ./databricks/notebooks/01_ingest_bronze.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema_dq}
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: ${var.num_workers}
+
+        - task_key: transform_silver
+          depends_on:
+            - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: ./databricks/notebooks/02_transform_silver.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema_dq}
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: ${var.num_workers}
+
+        - task_key: quality_checks
+          depends_on:
+            - task_key: transform_silver
+          notebook_task:
+            notebook_path: ./databricks/notebooks/03_quality_checks.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema_dq}
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: ${var.num_workers}
+
+        - task_key: llm_agent
+          depends_on:
+            - task_key: quality_checks
+          notebook_task:
+            notebook_path: ./databricks/notebooks/04_llm_agent.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema_dq}
+              secret_scope: ${var.openai_secret_scope}
+              secret_key: ${var.openai_secret_key}
+              openai_model: ${var.openai_model}
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: ${var.num_workers}

@@ -1,0 +1,89 @@
+# Databricks Asset Bundle — multi-env (dev / uat / prod)
+# Docs: https://docs.databricks.com/dev-tools/bundles/index.html
+#
+# Deploy:
+#   databricks bundle validate -t dev
+#   databricks bundle deploy -t dev
+#   databricks bundle deploy -t uat
+#   databricks bundle deploy -t prod
+#
+# Replace workspace host placeholders before first deploy.
+# Auth: DATABRICKS_HOST + DATABRICKS_TOKEN (or `databricks auth login`)
+
+bundle:
+  name: data-engineering-quality-leadtime
+
+include:
+  - resources/jobs/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog name for this environment
+    default: dev
+  schema_dq:
+    description: Schema for Bronze-Silver DQ demo
+    default: ecommerce_dq
+  schema_mseg:
+    description: Schema for MSEG lead-time demo
+    default: mseg_lead_time
+  openai_secret_scope:
+    description: Databricks secret scope for OpenAI key
+    default: openai-dev
+  openai_secret_key:
+    default: api_key
+  openai_model:
+    default: gpt-4o-mini
+  git_repo_path:
+    description: Workspace Repos path prefix where this repo is cloned (optional fallback)
+    default: /Repos/Data-Engineering
+  node_type_id:
+    default: i3.xlarge
+  spark_version:
+    default: "14.3.x-scala2.12"
+  num_workers:
+    default: 1
+
+sync:
+  include:
+    - databricks/notebooks/**
+    - gsk-pharma-lead-time/databricks/notebooks/**
+    - gsk-pharma-lead-time/databricks/sample_data/**
+    - config/environments/**
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      # TODO: set your Dev workspace URL
+      host: https://YOUR-DEV-WORKSPACE.cloud.databricks.com
+    variables:
+      catalog: dev
+      schema_dq: ecommerce_dq
+      schema_mseg: mseg_lead_time
+      openai_secret_scope: openai-dev
+      num_workers: 1
+
+  uat:
+    mode: production
+    workspace:
+      # TODO: set your UAT workspace URL (or same workspace + uat catalog)
+      host: https://YOUR-UAT-WORKSPACE.cloud.databricks.com
+    variables:
+      catalog: uat
+      schema_dq: ecommerce_dq
+      schema_mseg: mseg_lead_time
+      openai_secret_scope: openai-uat
+      num_workers: 2
+
+  prod:
+    mode: production
+    workspace:
+      # TODO: set your Prod workspace URL
+      host: https://YOUR-PROD-WORKSPACE.cloud.databricks.com
+    variables:
+      catalog: prod
+      schema_dq: ecommerce_dq
+      schema_mseg: mseg_lead_time
+      openai_secret_scope: openai-prod
+      num_workers: 2

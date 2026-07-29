@@ -1,0 +1,16 @@
+# Environment config — UAT
+name: uat
+catalog: uat
+schemas:
+  dq: ecommerce_dq
+  mseg: mseg_lead_time
+secrets:
+  openai_scope: openai-uat
+  openai_key: api_key
+data:
+  note: Masked / subset validation data
+schedule:
+  enabled: true
+  cron: "0 0 6 * * ?"
+promote_from: develop
+approval_required_for_next: true

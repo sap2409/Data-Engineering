@@ -1,0 +1,17 @@
+# Environment config — DEV
+# Used for documentation and local reference. Databricks Bundle uses databricks.yml targets.
+
+name: dev
+catalog: dev
+schemas:
+  dq: ecommerce_dq
+  mseg: mseg_lead_time
+secrets:
+  openai_scope: openai-dev
+  openai_key: api_key
+data:
+  note: Synthetic / sample only
+schedule:
+  enabled: false
+  cron: "0 0 6 * * ?"
+promote_from: feature

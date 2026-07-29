@@ -1,0 +1,16 @@
+# Environment config — PROD
+name: prod
+catalog: prod
+schemas:
+  dq: ecommerce_dq
+  mseg: mseg_lead_time
+secrets:
+  openai_scope: openai-prod
+  openai_key: api_key
+data:
+  note: Production data — restricted access
+schedule:
+  enabled: true
+  cron: "0 0 5 * * ?"
+promote_from: main
+approval_required: true

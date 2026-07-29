@@ -97,6 +97,16 @@ OPENAI_MODEL=gpt-4o-mini
 3. Re-run `python -m src.main --transform`
 
 Without a key, the agent still runs in offline mode.
+## Environments & CI/CD (Dev → UAT → Prod)
+
+Multi-env Databricks Asset Bundle + GitHub Actions with **manual Prod approval**:
+
+- Bundle: [`databricks.yml`](./databricks.yml)
+- Jobs: [`resources/jobs/`](./resources/jobs/)
+- Env configs: [`config/environments/`](./config/environments/)
+- Workflow: [`.github/workflows/cicd.yml`](./.github/workflows/cicd.yml)
+- Full guide: [`docs/CICD_AND_ENVIRONMENTS.md`](./docs/CICD_AND_ENVIRONMENTS.md)
+
 ## Databricks interview version
 
 Ready-to-run notebooks live in [`databricks/`](./databricks/):

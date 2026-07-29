@@ -1,0 +1,137 @@
+name: CI/CD — Dev → UAT → Prod (approval)
+
+# Branch model:
+#   push to develop  → test + deploy DEV
+#   push to main     → test + deploy UAT + (approval) deploy PROD
+#
+# Setup once in GitHub:
+#   Settings → Environments → create: dev, uat, production
+#   On "production": enable Required reviewers
+#   Add Environment secrets on each env:
+#     DATABRICKS_HOST
+#     DATABRICKS_TOKEN
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Bundle target to deploy (manual)"
+        required: true
+        type: choice
+        options: [dev, uat, prod]
+
+concurrency:
+  group: cicd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: CI — validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lightweight deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Compile Python sources
+        run: |
+          python -m compileall -q src gsk-pharma-lead-time/src || true
+          python -m compileall -q databricks/notebooks gsk-pharma-lead-time/databricks/notebooks
+
+      - name: Validate env YAML + bundle files parse
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          try:
+              import yaml
+          except ImportError:
+              print("pyyaml missing"); sys.exit(1)
+          files = list(Path("config/environments").glob("*.yml"))
+          files += list(Path("resources/jobs").glob("*.yml"))
+          files += [Path("databricks.yml")]
+          for f in files:
+              yaml.safe_load(f.read_text(encoding="utf-8"))
+              print("OK", f)
+          print("All YAML files parsed")
+          PY
+
+  deploy-dev:
+    name: CD — deploy DEV
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v0.9.0
+      - name: Deploy bundle to DEV
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle validate -t dev
+          databricks bundle deploy -t dev
+
+  deploy-uat:
+    name: CD — deploy UAT
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: uat
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v0.9.0
+      - name: Deploy bundle to UAT
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle validate -t uat
+          databricks bundle deploy -t uat
+
+  deploy-prod:
+    name: CD — deploy PROD (requires approval)
+    needs: deploy-uat
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v0.9.0
+      - name: Deploy bundle to PROD
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle validate -t prod
+          databricks bundle deploy -t prod
+
+  deploy-manual:
+    name: CD — manual deploy
+    needs: test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target == 'prod' && 'production' || github.event.inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v0.9.0
+      - name: Deploy selected target
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          TARGET: ${{ github.event.inputs.target }}
+        run: |
+          databricks bundle validate -t "$TARGET"
+          databricks bundle deploy -t "$TARGET"

@@ -115,6 +115,13 @@ databricks/notebooks/04_llm_agent.py
 
 See [`databricks/README.md`](./databricks/README.md) for workspace setup.
 
+## Related: GSK-style pharma lead-time project
+
+Sibling demo under [`gsk-pharma-lead-time/`](./gsk-pharma-lead-time/) for **E2E / D2D lead times** from **SAP MSEG**, across 12 stages (supplier → customer).
+
+- Explainer: [`gsk-pharma-lead-time/PROJECT_EXPLAINER.txt`](./gsk-pharma-lead-time/PROJECT_EXPLAINER.txt)
+- Databricks import: [`gsk-pharma-lead-time/databricks/`](./gsk-pharma-lead-time/databricks/)
+
 ## Project layout
 
 ```

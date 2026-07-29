@@ -1,0 +1,70 @@
+resources:
+  jobs:
+    mseg_lead_time_agent:
+      name: "MSEG-Lead-Time-E2E-D2D"
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/gsk-pharma-lead-time/databricks/notebooks/01_ingest_mseg_bronze
+            base_parameters:
+              catalog: main
+              schema: mseg_lead_time
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: transform_silver
+          depends_on:
+            - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/gsk-pharma-lead-time/databricks/notebooks/02_transform_silver
+            base_parameters:
+              catalog: main
+              schema: mseg_lead_time
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: gold_kpis
+          depends_on:
+            - task_key: transform_silver
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/gsk-pharma-lead-time/databricks/notebooks/03_lead_time_gold
+            base_parameters:
+              catalog: main
+              schema: mseg_lead_time
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: quality_checks
+          depends_on:
+            - task_key: gold_kpis
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/gsk-pharma-lead-time/databricks/notebooks/04_quality_checks
+            base_parameters:
+              catalog: main
+              schema: mseg_lead_time
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: llm_agent
+          depends_on:
+            - task_key: quality_checks
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/gsk-pharma-lead-time/databricks/notebooks/05_llm_agent
+            base_parameters:
+              catalog: main
+              schema: mseg_lead_time
+              secret_scope: openai
+              secret_key: api_key
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1

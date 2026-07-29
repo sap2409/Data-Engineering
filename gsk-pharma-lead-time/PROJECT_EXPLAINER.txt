@@ -1,0 +1,176 @@
+================================================================================
+PROJECT EXPLAINER — Pharma Lead Time Analytics from SAP MSEG (Demo)
+================================================================================
+
+IMPORTANT
+---------
+This is a synthetic / interview learning project.
+It is NOT real GSK production data and is NOT an official GSK system.
+
+What problem does this project solve?
+-------------------------------------
+In pharma supply chain, leadership asks:
+
+  - How long does each stage take for a batch?
+  - Where do we lose time between stages (waiting / handoff)?
+  - How long is the full journey from supplier to customer?
+
+This project answers those questions using SAP goods-movement postings
+that look like table MSEG (Material Document Segment).
+
+
+Where does the data come from?
+------------------------------
+Bronze source = SAP MSEG-style material document lines.
+
+Each row is one goods movement posting, for example:
+  - Goods receipt for purchase order
+  - Goods issue to production
+  - Transfer to warehouse / DC
+  - Goods issue for customer delivery
+
+Key MSEG fields used:
+
+  MBLNR + MJAHR + ZEILE   Unique material document line
+  MATNR                   Material number
+  WERKS                   Plant
+  CHARG                   Batch number  --> becomes batch_id
+  BWART                   Movement type --> mapped to a lifecycle stage
+  MENGE / MEINS           Quantity / unit
+  BUDAT / CPUDT_TIME      Posting / event timestamp
+  LGORT                   Storage location
+  LIFNR                   Vendor
+  KUNNR                   Customer
+
+
+What are the 12 stages?
+-----------------------
+In process order (supplier --> customer):
+
+  1.  supplier
+  2.  raw_material_procurement
+  3.  inbound_logistics
+  4.  raw_material_receipt
+  5.  quality_inspection_and_release
+  6.  manufacturing
+  7.  packaging
+  8.  finished_goods
+  9.  warehouse
+  10. distribution_center
+  11. customer_shipment
+  12. customer
+
+BWART (movement type) decides which stage a posting belongs to.
+Example:
+  Z01  -> supplier
+  101  -> raw_material_receipt
+  261  -> manufacturing
+  601  -> customer_shipment
+  Z06  -> customer
+
+Full map is in: config/lead_time_rules.yaml
+
+
+What do E2E and D2D mean here?
+------------------------------
+Stage lead time
+  Time spent inside one stage for a batch.
+  = last MSEG timestamp in stage - first MSEG timestamp in stage
+
+D2D lead time (door-to-door / stage-to-stage handoff)
+  Waiting time between consecutive stages.
+  = start of stage N+1 - end of stage N
+
+E2E lead time (end-to-end)
+  Full lifecycle time for a batch.
+  = customer stage end - supplier stage start
+
+
+Pipeline architecture (medallion style)
+---------------------------------------
+1) Bronze
+   Raw MSEG lines (as landed)
+
+2) Silver
+   - Clean / validate MSEG
+   - Quarantine bad rows with rejection_reason
+   - Map BWART -> stage
+   - Build batch+stage timeline events
+
+3) Gold
+   - stage_lead_times
+   - d2d_lead_times
+   - e2e_lead_times
+
+4) Quality + Agent
+   - Automated checks (reconciliation, nulls, targets)
+   - LLM/offline agent explains bottlenecks
+
+
+Why quarantine?
+---------------
+Bad MSEG rows are NOT silently deleted.
+They go to quarantine with a reason, for example:
+  - duplicate_mseg_key
+  - missing_matnr_charg_bwart_or_werks
+  - unmapped_bwart
+  - invalid_menge
+  - invalid_timestamp
+
+This proves Bronze count = Silver count + Quarantine count.
+
+
+How to run locally
+------------------
+  cd gsk-pharma-lead-time
+  .\.venv\Scripts\Activate.ps1
+  $env:PYTHONIOENCODING = "utf-8"
+  python -m src.main --transform
+
+Outputs:
+  data/silver/mseg_cleaned.csv
+  data/silver/batch_stage_events.csv
+  data/quarantine/mseg_rejected.csv
+  data/gold/stage_lead_times.csv
+  data/gold/d2d_lead_times.csv
+  data/gold/e2e_lead_times.csv
+  reports/
+
+
+How to run in Databricks
+------------------------
+Import / clone notebooks under:
+  gsk-pharma-lead-time/databricks/notebooks/
+
+Run in order:
+  00_setup_config
+  01_ingest_mseg_bronze
+  02_transform_silver
+  03_lead_time_gold
+  04_quality_checks
+  05_llm_agent
+
+See: databricks/README.md
+
+
+Interview one-liner
+-------------------
+"We derive supply-chain lead times from SAP MSEG goods movements.
+BWART maps each posting to a lifecycle stage. We aggregate by batch,
+measure stage duration, D2D handoff delay, and supplier-to-customer E2E,
+and quarantine invalid postings so every row is accountable."
+
+
+Folder map
+----------
+  config/           Rules, stages, BWART map, targets
+  data/bronze/      Raw MSEG sample
+  data/silver/      Cleaned MSEG + stage events
+  data/quarantine/  Rejected MSEG
+  data/gold/        KPI tables
+  src/              Local PySpark pipeline
+  databricks/       Databricks notebooks to import
+  reports/          Run reports + agent narrative
+  PROJECT_EXPLAINER.txt   <-- this file
+
+================================================================================

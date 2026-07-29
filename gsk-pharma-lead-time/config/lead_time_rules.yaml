@@ -1,0 +1,125 @@
+# Synthetic / interview demo only — not real GSK or SAP production data.
+
+stages:
+  - supplier
+  - raw_material_procurement
+  - inbound_logistics
+  - raw_material_receipt
+  - quality_inspection_and_release
+  - manufacturing
+  - packaging
+  - finished_goods
+  - warehouse
+  - distribution_center
+  - customer_shipment
+  - customer
+
+stage_labels:
+  supplier: Supplier
+  raw_material_procurement: Raw material procurement
+  inbound_logistics: Inbound logistics
+  raw_material_receipt: Raw material receipt
+  quality_inspection_and_release: Quality inspection & release
+  manufacturing: Manufacturing
+  packaging: Packaging
+  finished_goods: Finished goods
+  warehouse: Warehouse
+  distribution_center: Distribution center
+  customer_shipment: Customer shipment
+  customer: Customer
+
+# BWART (movement type) → lifecycle stage
+# Typical SAP IM movement types used for storytelling; adjust per real plant config.
+bwart_stage_map:
+  "101": raw_material_receipt          # GR for PO into warehouse
+  "103": raw_material_receipt          # GR into blocked/QI stock
+  "105": quality_inspection_and_release # Release from blocked to unrestricted
+  "321": quality_inspection_and_release # QI → unrestricted
+  "322": quality_inspection_and_release # unrestricted → QI (rework signal)
+  "261": manufacturing                 # GI to production order
+  "262": manufacturing                 # reverse GI production
+  "101F": manufacturing                # demo: GR from production (finished intermediate)
+  "531": manufacturing                 # by-product from production (demo)
+  "311": warehouse                     # transfer posting storage location
+  "313": warehouse                     # transfer remove
+  "315": warehouse                     # transfer place
+  "601": customer_shipment             # GI delivery / sales
+  "602": customer_shipment             # reverse GI delivery
+  "641": distribution_center           # STO goods issue
+  "643": distribution_center           # STO cross-company GI
+  "647": distribution_center           # STO GI
+  "Z07": distribution_center           # demo: DC goods receipt (avoid colliding with 101 PO GR)
+  "101S": supplier                     # demo: supplier ASN / outbound confirmation
+  "541": raw_material_procurement      # GI to subcontractor / procurement issue
+  "542": raw_material_procurement
+  "561": inbound_logistics             # initial stock / in-transit receive (demo)
+  "562": inbound_logistics
+  "309": packaging                     # material-to-material (pack conversion demo)
+  "501": finished_goods                # GR without PO (FG receipt demo)
+  "Z01": supplier                      # custom demo movement
+  "Z02": raw_material_procurement
+  "Z03": inbound_logistics
+  "Z04": packaging
+  "Z05": finished_goods
+  "Z06": customer                      # proof of delivery / customer receipt demo
+
+paths:
+  bronze: data/bronze/mseg_material_documents.csv
+  silver_mseg: data/silver/mseg_cleaned.csv
+  silver_stages: data/silver/batch_stage_events.csv
+  quarantine: data/quarantine/mseg_rejected.csv
+  gold_stage: data/gold/stage_lead_times.csv
+  gold_d2d: data/gold/d2d_lead_times.csv
+  gold_e2e: data/gold/e2e_lead_times.csv
+
+rules:
+  required_mseg_columns:
+    - MBLNR
+    - MJAHR
+    - ZEILE
+    - MATNR
+    - WERKS
+    - CHARG
+    - BWART
+    - MENGE
+    - MEINS
+    - BUDAT
+    - CPUDT_TIME
+  allowed_stages:
+    - supplier
+    - raw_material_procurement
+    - inbound_logistics
+    - raw_material_receipt
+    - quality_inspection_and_release
+    - manufacturing
+    - packaging
+    - finished_goods
+    - warehouse
+    - distribution_center
+    - customer_shipment
+    - customer
+  # Stage events derived from MSEG must have start/end
+  max_null_pct_stages:
+    batch_id: 0
+    stage: 0
+    start_ts: 0
+    end_ts: 0
+  unique_mseg_keys: [MBLNR, MJAHR, ZEILE]
+  unique_stage_keys: [batch_id, stage]
+
+targets:
+  d2d_days: 2
+  e2e_days: 60
+  stage_days:
+    supplier: 3
+    raw_material_procurement: 5
+    inbound_logistics: 4
+    raw_material_receipt: 2
+    quality_inspection_and_release: 7
+    manufacturing: 10
+    packaging: 3
+    finished_goods: 2
+    warehouse: 3
+    distribution_center: 4
+    customer_shipment: 3
+    customer: 2

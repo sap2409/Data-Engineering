@@ -97,6 +97,24 @@ OPENAI_MODEL=gpt-4o-mini
 3. Re-run `python -m src.main --transform`
 
 Without a key, the agent still runs in offline mode.
+## Databricks interview version
+
+Ready-to-run notebooks live in [`databricks/`](./databricks/):
+
+- Ingest → Transform → Quality → LLM agent  
+- Delta tables + quarantine + `dq_results`  
+- Demo script: [`databricks/INTERVIEW_DEMO.md`](./databricks/INTERVIEW_DEMO.md)
+
+```text
+databricks/notebooks/00_setup_config.py
+databricks/notebooks/01_ingest_bronze.py
+databricks/notebooks/02_transform_silver.py
+databricks/notebooks/03_quality_checks.py
+databricks/notebooks/04_llm_agent.py
+```
+
+See [`databricks/README.md`](./databricks/README.md) for workspace setup.
+
 ## Project layout
 
 ```

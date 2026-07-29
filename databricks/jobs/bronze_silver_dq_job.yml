@@ -1,0 +1,65 @@
+# Databricks job definition (Workflows UI / Asset Bundles)
+# Adjust notebook paths to your Repo location after cloning.
+
+resources:
+  jobs:
+    bronze_silver_dq_agent:
+      name: "Bronze-Silver-DQ-Agent"
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/databricks/notebooks/01_ingest_bronze
+            base_parameters:
+              catalog: main
+              schema: ecommerce_dq
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: transform_silver
+          depends_on:
+            - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/databricks/notebooks/02_transform_silver
+            base_parameters:
+              catalog: main
+              schema: ecommerce_dq
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: quality_checks
+          depends_on:
+            - task_key: transform_silver
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/databricks/notebooks/03_quality_checks
+            base_parameters:
+              catalog: main
+              schema: ecommerce_dq
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: llm_agent
+          depends_on:
+            - task_key: quality_checks
+          notebook_task:
+            notebook_path: /Repos/Data-Engineering/databricks/notebooks/04_llm_agent
+            base_parameters:
+              catalog: main
+              schema: ecommerce_dq
+              secret_scope: openai
+              secret_key: api_key
+              openai_model: gpt-4o-mini
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+      tags:
+        project: bronze-silver-dq
+        purpose: interview-demo
